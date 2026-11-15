@@ -50,3 +50,37 @@ PY2
 "$TMP/venv/bin/quantlab" integer --input integer-input.json > integer-console.json
 "$TMP/venv/bin/python" -m quantlab.cli integer --input integer-input.json > integer-module.json
 cmp integer-console.json integer-module.json
+
+"$TMP/venv/bin/python" - <<'PYBOX'
+from fractions import Fraction as F
+import importlib
+import importlib.resources as resources
+import json
+from quantlab.box import box_audit
+from quantlab.packed import decode
+m=importlib.import_module('quantlab.box')
+assert 'site-packages' in m.__file__
+count=0
+for mode in ('per-tensor','per-channel'):
+    for bits in (32,64):
+        witnesses=json.loads(resources.files('quantlab').joinpath(f'data/witnesses-{mode}-{bits}.json').read_text())
+        for witness in witnesses:
+            weights=witness['value']['weights']; x=witness['value']['x']
+            packed=decode(bytes.fromhex(witness['report']['payload_hex']))['packed']
+            scores=[sum((F(float(a))*F(float(b)) for a,b in zip(row,x)),F(0)) for row in weights]
+            selected=max(range(len(scores)),key=lambda i:scores[i])
+            for radius in (0., .01, .25):
+                lower=[max(-1e6,float(v)-radius) for v in x]
+                upper=[min(1e6,float(v)+radius) for v in x]
+                report=box_audit(weights,packed,lower,upper,selected)
+                for key in ('source','packed'):
+                    for pair in report[key]['pairs']:
+                        values=list(map(F,pair['corner_scores']))
+                        assert F(pair['minimum_margin'])==values[selected]-values[pair['rival']]
+                        assert pair['corner_prediction']==max(range(len(values)),key=lambda i:values[i])
+                        if not pair['condition_holds']:assert pair['corner_prediction']!=selected
+                if radius==0:assert report['source']['selected_wins_everywhere']
+                count+=1
+assert count==156
+print('Installed box module and 156 complete archived source/packed box reports verified outside checkout')
+PYBOX

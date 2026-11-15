@@ -8,7 +8,7 @@ partial sums and an exact error decomposition, with floating-point final rescale
 Open [the weight inspector](https://midya8.github.io/quantlab/) or
 [the integer-product inspector](https://midya8.github.io/quantlab/integer.html).
 Both also work from their local HTML files without a server. The current suite
-has 47 Python tests and seven Node/actual-Chrome tests, including the earlier
+has 52 Python tests and seven Node/actual-Chrome tests, including the earlier
 weight-only checks described below. Original training, magnitude controls and
 measured artifacts remain unchanged.
 
@@ -68,6 +68,45 @@ The earlier installed-wheel gate imported seven modules, ran six commands and
 reconstructed the complete original fixture outside the checkout. The current
 gate adds the integer module, 72 reports and both integer CLI entry points. The current eight CI jobs cover Python 3.10-3.13, original demo, actual Chrome, installed reproduction and an actual NumPy int32 reference.
 
+## Selected-class stability on a supplied box
+
+```python
+from quantlab.box import box_audit
+
+from quantlab.packed import decode
+
+decoded = decode(payload)  # bytes from quantlab.packed.encode or a QLB1 file
+report = box_audit(weights, decoded["packed"], lower, upper, selected=0)
+print(report["both_maps_keep_selected_everywhere"])
+```
+
+`box_audit` checks the source linear map and the fixed packed-weight linear map
+separately over a closed, user-supplied input box. Every rival gets an exact
+worst selected-minus-rival margin, its attaining corner, signed coordinate
+contributions, all corner scores and the first-index prediction there. A
+lower-index rival needs a strictly positive margin; a higher-index rival allows
+zero. These conditions are necessary and sufficient for the chosen class to
+win throughout this box in each represented-real linear map. A failed pair
+always supplies a point where the chosen class loses, though a third class may
+beat that pair's rival.
+
+This is exact rational arithmetic on the represented coefficients and supplied
+endpoints, not a floating-point accumulation guarantee. It does not quantize
+activations, fit an uncertainty set, retrain, or claim unseen accuracy. The
+source and packed maps may fail for different reasons; the result does not
+assert that their predictions agree everywhere when the selected class fails.
+Existing input/QLB1 shape and magnitude bounds apply. There is no new CLI or
+browser control. The earlier fixed-input inspector and integer-product reports
+keep their existing schemas and bytes.
+
+Five tests check every corner and class for 80 generated matrices under both
+modes and scale precisions (956 reports), first-index ties, singleton boxes,
+subnormal scales, extreme finite endpoints, source/packed disagreement and
+input validation. The installed module also checks 156 boxes from all 52
+original weight-report inputs. The current suite has 52 Python tests and the
+same seven substantive Node/actual-Chrome tests; all 47 earlier Python tests
+remain.
+
 ## Limits and attribution
 
 This is a finite synthetic classifier, not a transformer or deployment benchmark. Hashed bag-of-words features discard word order and can collide. The file contains weights only, no bias, feature extraction, labels or activations. The fixed-input bound says nothing about uncertainty or unobserved data. Standard symmetric quantization and linear inequalities are attributed, not presented as new methods. QLB1 is a small educational format, not ONNX, GGUF or a secure checkpoint. See [methods, assumptions and sources](FORMAT.md).
@@ -84,7 +123,7 @@ python scripts/integer_fixtures.py --check
 PYTHONPATH=. python scripts/verify_integer.py
 ```
 
-[INTEGER.md](INTEGER.md) specifies semantics, limits, provenance and reproduction. Original QLB1 bytes, training, 39 earlier Python tests and 52 earlier report witnesses stay unchanged. Current totals: 47 Python tests and seven Node/actual-Chrome tests. New checks include 240 separately rounded rational reference cases, 519 signed half-step activation cases, 72 full cross-runtime reports covering 6,848 products, NumPy int32 dot products/prefixes, 168 browser row selections and 20 responsive views. An isolated installed package verifies every new report and both CLI entry points. No hardware speed, RAM, calibrated range, unseen accuracy or new-algorithm claim.
+[INTEGER.md](INTEGER.md) specifies semantics, limits, provenance and reproduction. Original QLB1 bytes, training, 39 earlier Python tests and 52 earlier report witnesses stay unchanged. That release had 47 Python tests and seven Node/actual-Chrome tests; current totals are above. New checks include 240 separately rounded rational reference cases, 519 signed half-step activation cases, 72 full cross-runtime reports covering 6,848 products, NumPy int32 dot products/prefixes, 168 browser row selections and 20 responsive views. An isolated installed package verifies every new report and both CLI entry points. No hardware speed, RAM, calibrated range, unseen accuracy or new-algorithm claim.
 
 ## License
 
