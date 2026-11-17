@@ -1,12 +1,12 @@
-# QuantLab
+# Int8 quantization
 
 A Python post-training quantizer and two independent browser inspectors. The
 weight inspector follows int8 codes through packed files, reconstructed logits
 and fixed-input decision bounds. The activation inspector adds integer products,
 partial sums and an exact error decomposition, with floating-point final rescale.
 
-Open [the weight inspector](https://midya8.github.io/quantlab/) or
-[the integer-product inspector](https://midya8.github.io/quantlab/integer.html).
+Open [the weight inspector](https://midya8.github.io/int8-quantization/) or
+[the integer-product inspector](https://midya8.github.io/int8-quantization/integer.html).
 Both also work from their local HTML files without a server. The current suite
 has 52 Python tests and seven Node/actual-Chrome tests, including the earlier
 weight-only checks described below. Original training, magnitude controls and
@@ -113,7 +113,7 @@ This is a finite synthetic classifier, not a transformer or deployment benchmark
 
 ## Activation × weight integer dot-product audit
 
-A separate [interactive page](https://midya8.github.io/quantlab/integer.html) traces signed 8-bit products and every partial accumulator, with fixed user-declared activation range, stored binary32/64 activation scales, exact nearest-even codes and clipping flags. Python `Fraction` and independent browser BigInt dyadics export the complete exact decomposition `weight error + activation error = total error`. Every prefix fits int32 by the checked shape bound, up to 2,064,512. Integer products are exact; final rescale is floating, not integer-only end-to-end inference.
+A separate [interactive page](https://midya8.github.io/int8-quantization/integer.html) traces signed 8-bit products and every partial accumulator, with fixed user-declared activation range, stored binary32/64 activation scales, exact nearest-even codes and clipping flags. Python `Fraction` and independent browser BigInt dyadics export the complete exact decomposition `weight error + activation error = total error`. Every prefix fits int32 by the checked shape bound, up to 2,064,512. Integer products are exact; final rescale is floating, not integer-only end-to-end inference.
 
 The visible activation-only control uses exactly represented weights `[[127,0],[0,127]]`, input `[0.4,0.49]`, and range `127`: the strict row-1 winner becomes a zero-code tie won by row 0, with exactly zero weight error. This is constructed, not a trained result or accuracy claim.
 
